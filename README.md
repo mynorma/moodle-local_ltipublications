@@ -74,6 +74,10 @@ The plugin stores no personal data and declares so through the Privacy API (a nu
 Uninstalling removes the function, the service with its authorised users and tokens, and the capability.
 The dedicated user and role created during configuration stay until the administrator deletes them.
 
+## Issues
+
+Report bugs and request features at https://github.com/mynorma/moodle-local_ltipublications/issues.
+
 ## License
 
 GNU GPL v3 or later, see [LICENSE](LICENSE). Copyright 2026 CEI - Comitato Elettrotecnico Italiano.

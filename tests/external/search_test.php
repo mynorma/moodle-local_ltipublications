@@ -79,6 +79,26 @@ final class search_test extends externallib_testcase {
         $this->assertSame([], $this->search('nascosto'));
     }
 
+    public function test_searches_hidden_courses_too(): void {
+        $course = $this->getDataGenerator()->create_course(['fullname' => 'Corso riservato', 'visible' => 0]);
+        $tool = $this->publish(['courseid' => $course->id]);
+
+        $this->assertSame([$tool->uuid], array_column($this->search('riservato'), 'uuid'));
+    }
+
+    public function test_treats_like_wildcards_as_plain_text(): void {
+        $this->publish(['courseid' => $this->getDataGenerator()->create_course(['fullname' => 'Corso base'])->id]);
+
+        $this->assertSame([], $this->search('%'));
+        $this->assertSame([], $this->search('_'));
+    }
+
+    public function test_lists_the_publications_for_an_empty_query(): void {
+        $tool = $this->publish(['courseid' => $this->getDataGenerator()->create_course()->id]);
+
+        $this->assertSame([$tool->uuid], array_column($this->search('  '), 'uuid'));
+    }
+
     public function test_returns_at_most_twenty_publications(): void {
         for ($i = 1; $i <= 21; $i++) {
             $this->publish(['courseid' => $this->getDataGenerator()->create_course(['fullname' => "Corso $i"])->id]);

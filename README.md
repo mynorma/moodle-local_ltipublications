@@ -26,8 +26,9 @@ data.
 ## The function
 
 `local_ltipublications_search(query)` returns at most 20 enabled LTI 1.3 publications whose course name or
-publication name contains `query` (case and accent insensitive), or whose uuid equals it. Every enabled
-publication is searched, whatever the visibility of its course.
+publication name contains `query`, or whose uuid equals it. The match ignores case; it also ignores accents
+on MySQL and MariaDB, but not on PostgreSQL. An empty query lists the first 20 publications by course name.
+Every enabled publication is searched, whatever the visibility of its course.
 
 ```bash
 curl https://moodle.example.org/webservice/rest/server.php \

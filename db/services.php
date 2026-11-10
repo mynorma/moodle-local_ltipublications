@@ -31,12 +31,18 @@ $functions = [
         'type' => 'read',
         'capabilities' => 'local/ltipublications:search',
     ],
+    'local_ltipublications_completions' => [
+        'classname' => 'local_ltipublications\external\completions',
+        'description' => 'List when the learners who came through an LTI 1.3 publication completed it.',
+        'type' => 'read',
+        'capabilities' => 'local/ltipublications:viewcompletions',
+    ],
 ];
 
 $services = [
     'LTI publications' => [
         'shortname' => 'ltipublications',
-        'functions' => ['local_ltipublications_search'],
+        'functions' => ['local_ltipublications_search', 'local_ltipublications_completions'],
         'restrictedusers' => 1,
         'enabled' => 1,
     ],

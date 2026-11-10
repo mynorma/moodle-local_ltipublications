@@ -25,5 +25,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['ltipublications:search'] = 'Search the courses published as LTI tools';
+$string['ltipublications:viewcompletions'] = 'See when the learners of the LTI publications completed them';
 $string['pluginname'] = 'LTI publications';
-$string['privacy:metadata'] = 'The plugin only reads the courses and activities published as LTI tools, and stores no personal data.';
+$string['privacy:metadata'] = 'The plugin stores no personal data. Its web service functions return, to authorised users only, the courses and activities published as LTI tools and when the learners who came through them completed them.';

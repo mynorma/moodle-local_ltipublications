@@ -103,10 +103,6 @@ function returns personal data, the learners' platform ids and completion times,
 Uninstalling removes the functions, the service with its authorised users and tokens, and the capabilities.
 The dedicated user and role created during configuration stay until the administrator deletes them.
 
-## Issues
-
-Report bugs and request features at https://github.com/mynorma/moodle-local_ltipublications/issues.
-
 ## License
 
 GNU GPL v3 or later, see [LICENSE](LICENSE). Copyright 2026 CEI - Comitato Elettrotecnico Italiano.

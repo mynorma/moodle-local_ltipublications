@@ -15,12 +15,9 @@ on it and released on a new `MOODLE_XXX_STABLE` branch.
 
 ## Reporting a vulnerability
 
-Do not open a public issue. Report the vulnerability privately through GitHub:
-[Security > Report a vulnerability](https://github.com/mynorma/moodle-local_ltipublications/security/advisories/new).
+Do not open an issue or a pull request. Report the vulnerability privately to the repository's owners.
 
-Include the plugin and Moodle versions, the steps to reproduce and the impact you expect. We confirm we have
-received the report, agree with you on the fix and the disclosure date, then publish a fixed release and a
-GitHub security advisory that credits you, unless you prefer otherwise.
+Include the plugin and Moodle versions, the steps to reproduce and the impact you expect.
 
 ## What the plugin exposes
 

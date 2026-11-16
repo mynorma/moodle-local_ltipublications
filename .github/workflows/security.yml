@@ -1,0 +1,98 @@
+name: Security scan
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag to scan and attach the report to
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      SEMGREP_VERSION: 1.183.0
+      RULESETS: p/php p/security-audit p/secrets
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+          path: plugin
+
+      - name: Semgrep
+        run: |
+          mkdir -p out
+          configs=$(printf -- '--config %s ' $RULESETS)
+          docker run --rm -v "$PWD/plugin:/src" -v "$PWD/out:/out" "semgrep/semgrep:$SEMGREP_VERSION" \
+            semgrep scan --metrics=off --quiet $configs --json-output=/out/semgrep.json > /dev/null
+
+      - name: Report
+        run: |
+          release=$(sed -n "s/.*->release *= *'\(.*\)'.*/\1/p" plugin/version.php)
+          version=$(sed -n 's/.*->version *= *\([0-9]*\).*/\1/p' plugin/version.php)
+          report="local_ltipublications-$release-security-report.md"
+          json=out/semgrep.json
+          findings=$(jq '.results | length' "$json")
+          errors=$(jq '.errors | length' "$json")
+          {
+            echo "# Security scan: local_ltipublications $release"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Plugin | local_ltipublications $release ($version) |"
+            echo "| Tag | \`$TAG\` |"
+            echo "| Commit | \`$(git -C plugin rev-parse HEAD)\` |"
+            echo "| Scanned on | $(date -u '+%Y-%m-%d %H:%M UTC') |"
+            echo "| Scanner | Semgrep $(jq -r .version "$json") |"
+            echo "| Rulesets | $(echo $RULESETS | sed 's/ /, /g') |"
+            echo "| Findings | $findings |"
+            echo "| Scan errors | $errors |"
+            echo
+            echo "## Findings"
+            echo
+            if [ "$findings" -eq 0 ]; then
+              echo "None."
+            else
+              echo "| Severity | Rule | Where | Message |"
+              echo "|---|---|---|---|"
+              jq -r '.results[] | "| \(.extra.severity) | `\(.check_id)` | `\(.path):\(.start.line)` | \(.extra.message | gsub("\n"; " ") | gsub("\\|"; "\\|")) |"' "$json"
+            fi
+            if [ "$errors" -gt 0 ]; then
+              echo
+              echo "## Scan errors"
+              echo
+              jq -r '.errors[] | "- \(.level // "error"): \(.message // (.type | tostring) | gsub("\n"; " "))"' "$json"
+            fi
+            echo
+            echo "## Files scanned"
+            echo
+            jq -r '.paths.scanned[] | "- `\(.)`"' "$json"
+            echo
+            echo "## How to reproduce"
+            echo
+            echo '```sh'
+            echo "git checkout $TAG"
+            echo "docker run --rm -v \"\$PWD:/src\" semgrep/semgrep:$SEMGREP_VERSION semgrep scan --metrics=off$(printf -- ' --config %s' $RULESETS)"
+            echo '```'
+          } > "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          echo "REPORT=$report" >> "$GITHUB_ENV"
+          echo "PROBLEMS=$((findings + errors))" >> "$GITHUB_ENV"
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$REPORT" --clobber -R "$GITHUB_REPOSITORY"
+
+      - name: Fail on findings
+        if: env.PROBLEMS != '0'
+        run: |
+          echo "::error::$PROBLEMS findings or scan errors, see $REPORT"
+          exit 1

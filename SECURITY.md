@@ -32,3 +32,9 @@ Every call validates its parameters, validates the system context and checks the
 anything. The queries go through Moodle's database API with bound parameters, and the search escapes the
 `LIKE` wildcards. The plugin adds no database tables, settings, pages, forms, files, scheduled tasks or events,
 and stores no personal data.
+
+## Security scan
+
+Every release carries a security report, `local_ltipublications-<release>-security-report.md`, attached by the
+*Security scan* workflow: Semgrep's `p/php`, `p/security-audit` and `p/secrets` rulesets over the tagged code,
+with the scanner version, the files scanned and the command that reproduces it. A finding fails the workflow.

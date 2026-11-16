@@ -7,8 +7,9 @@ ship as a new release, with a tag and a ZIP package.
 
 | Plugin | Moodle | Branch | Security fixes |
 |---|---|---|---|
-| 1.1.x | 4.5 LTS | `MOODLE_405_STABLE` | yes |
-| 1.0.x | 4.5 LTS | none | no, upgrade to 1.1 |
+| 1.2.x | 4.5 LTS | `MOODLE_405_STABLE` | yes |
+| 1.1.x | 4.5 LTS | none | no, upgrade to 1.2 |
+| 1.0.x | 4.5 LTS | none | no, upgrade to 1.2 |
 
 `main` is where the next version is developed. Before a new Moodle version is supported, the plugin is tested
 on it and released on a new `MOODLE_XXX_STABLE` branch.

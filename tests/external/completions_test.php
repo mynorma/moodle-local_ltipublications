@@ -59,8 +59,11 @@ final class completions_test extends externallib_testcase {
         $this->learner($tool, 'unfinished');
 
         $this->assertSame(
-            [['sub' => 'early', 'timecompleted' => 1000], ['sub' => 'late', 'timecompleted' => 2000]],
-            $this->completions($tool->uuid)
+            [
+                ['uuid' => $tool->uuid, 'sub' => 'early', 'timecompleted' => 1000],
+                ['uuid' => $tool->uuid, 'sub' => 'late', 'timecompleted' => 2000],
+            ],
+            $this->completions([$tool->uuid])
         );
     }
 
@@ -70,7 +73,10 @@ final class completions_test extends externallib_testcase {
         $this->complete_course($this->learner($tool, 'early'), $course, 1000);
         $this->complete_course($this->learner($tool, 'late'), $course, 2000);
 
-        $this->assertSame([['sub' => 'late', 'timecompleted' => 2000]], $this->completions($tool->uuid, 1000));
+        $this->assertSame(
+            [['uuid' => $tool->uuid, 'sub' => 'late', 'timecompleted' => 2000]],
+            $this->completions([$tool->uuid], 1000)
+        );
     }
 
     public function test_leaves_out_the_learners_of_another_publication(): void {
@@ -79,7 +85,28 @@ final class completions_test extends externallib_testcase {
         $other = $this->publish(['courseid' => $course->id]);
         $this->complete_course($this->learner($other, 'elsewhere'), $course, 1000);
 
-        $this->assertSame([], $this->completions($tool->uuid));
+        $this->assertSame([], $this->completions([$tool->uuid]));
+    }
+
+    public function test_lists_several_publications_in_the_order_asked_each_once(): void {
+        $first = $this->getDataGenerator()->create_course();
+        $second = $this->getDataGenerator()->create_course();
+        $one = $this->publish(['courseid' => $first->id]);
+        $two = $this->publish(['courseid' => $second->id]);
+        $this->complete_course($this->learner($one, 'ada'), $first, 2000);
+        $this->complete_course($this->learner($two, 'bea'), $second, 1000);
+
+        $this->assertSame(
+            [
+                ['uuid' => $two->uuid, 'sub' => 'bea', 'timecompleted' => 1000],
+                ['uuid' => $one->uuid, 'sub' => 'ada', 'timecompleted' => 2000],
+            ],
+            $this->completions([$two->uuid, '00000000-0000-0000-0000-000000000000', $one->uuid, $two->uuid])
+        );
+    }
+
+    public function test_finds_nothing_for_no_uuid(): void {
+        $this->assertSame([], $this->completions([]));
     }
 
     public function test_gives_the_sub_from_the_platform_the_learner_launched_from(): void {
@@ -89,7 +116,10 @@ final class completions_test extends externallib_testcase {
         get_auth_plugin('lti')->create_user_binding('https://other.example.org', 'theirs', $userid);
         $this->complete_course($userid, $course, 1000);
 
-        $this->assertSame([['sub' => 'ours', 'timecompleted' => 1000]], $this->completions($tool->uuid));
+        $this->assertSame(
+            [['uuid' => $tool->uuid, 'sub' => 'ours', 'timecompleted' => 1000]],
+            $this->completions([$tool->uuid])
+        );
     }
 
     public function test_uses_the_activity_completion_for_a_published_activity(): void {
@@ -101,11 +131,11 @@ final class completions_test extends externallib_testcase {
         $this->complete_activity($this->learner($tool, 'failed'), $page->cmid, COMPLETION_COMPLETE_FAIL, 3000);
         $this->complete_course($this->learner($tool, 'courseonly'), $course, 4000);
 
-        $this->assertSame(['done', 'passed'], array_column($this->completions($tool->uuid), 'sub'));
+        $this->assertSame(['done', 'passed'], array_column($this->completions([$tool->uuid]), 'sub'));
     }
 
     public function test_finds_nothing_for_an_unknown_uuid(): void {
-        $this->assertSame([], $this->completions('00000000-0000-0000-0000-000000000000'));
+        $this->assertSame([], $this->completions(['00000000-0000-0000-0000-000000000000']));
     }
 
     public function test_refuses_a_user_without_the_capability(): void {
@@ -113,7 +143,7 @@ final class completions_test extends externallib_testcase {
         $this->setUser($this->getDataGenerator()->create_user());
 
         $this->expectException(required_capability_exception::class);
-        completions::execute($tool->uuid);
+        completions::execute([$tool->uuid]);
     }
 
     /**
@@ -194,14 +224,14 @@ final class completions_test extends externallib_testcase {
     /**
      * Lists the completions the way a web service client sees them.
      *
-     * @param string $uuid the publication uuid
+     * @param array $uuids the publication uuids
      * @param int $since only the completions after this Unix time
      * @return array the completions
      */
-    private function completions(string $uuid, int $since = 0): array {
+    private function completions(array $uuids, int $since = 0): array {
         return external_api::clean_returnvalue(
             completions::execute_returns(),
-            completions::execute($uuid, $since)
+            completions::execute($uuids, $since)
         );
     }
 }

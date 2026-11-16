@@ -51,23 +51,26 @@ curl https://moodle.example.org/webservice/rest/server.php \
 
 ## Reading the completions
 
-`local_ltipublications_completions(uuid, since)` lists the learners who came through the publication `uuid`
-and completed it after the Unix time `since` (0 if left out), oldest first. Each learner is identified by the
-`sub` the platform sends in its launches, so the platform never needs Moodle's user ids. A published course
-counts as completed by its course completion; a published activity by its activity completion, complete or
-passed. An unknown uuid lists nothing. Moodle does not notify the platform, which polls this function.
+`local_ltipublications_completions(uuids, since)` lists the learners who came through each publication in
+`uuids` and completed it after the Unix time `since` (0 if left out): publication by publication in the order
+asked, oldest first within each, each row naming its publication's `uuid`. A uuid asked twice is listed once;
+an unknown uuid lists nothing. Each learner is identified by the `sub` the platform sends in its launches, so
+the platform never needs Moodle's user ids. A published course counts as completed by its course completion; a
+published activity by its activity completion, complete or passed. Moodle does not notify the platform, which
+polls this function, one call for all its publications.
 
 ```bash
 curl https://moodle.example.org/webservice/rest/server.php \
   -d wstoken=<token> \
   -d wsfunction=local_ltipublications_completions \
   -d moodlewsrestformat=json \
-  -d uuid=6f1e0c2a-... \
+  -d 'uuids[0]=6f1e0c2a-...' \
+  -d 'uuids[1]=9b3d7e41-...' \
   -d since=1767225600
 ```
 
 ```json
-[{"sub": "8c2f...", "timecompleted": 1767312000}]
+[{"uuid": "6f1e0c2a-...", "sub": "8c2f...", "timecompleted": 1767312000}]
 ```
 
 ## Installation

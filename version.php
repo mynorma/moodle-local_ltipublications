@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_ltipublications';
-$plugin->version = 2026111000;
+$plugin->version = 2026111600;
 $plugin->requires = 2024100700;
 $plugin->supported = [405, 405];
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.1.0';
+$plugin->release = '1.2.0';

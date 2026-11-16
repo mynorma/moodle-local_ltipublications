@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/completionlib.php');
 
 /**
- * Lists when the learners who came through an LTI 1.3 publication completed the published course or activity.
+ * Lists when the learners who came through LTI 1.3 publications completed the published course or activity.
  *
  * @package    local_ltipublications
  * @copyright  2026 CEI - Comitato Elettrotecnico Italiano
@@ -43,28 +43,43 @@ class completions extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'uuid' => new external_value(PARAM_ALPHANUMEXT, 'The publication uuid'),
+            'uuids' => new external_multiple_structure(new external_value(PARAM_ALPHANUMEXT, 'A publication uuid')),
             'since' => new external_value(PARAM_INT, 'Only the completions after this Unix time', VALUE_DEFAULT, 0),
         ]);
     }
 
     /**
-     * Lists the completions of a publication's learners, each with the platform's user id.
+     * Lists the completions of the learners of several publications, each with its publication and the platform's user id.
      *
-     * @param string $uuid the publication uuid
+     * @param array $uuids the publication uuids
      * @param int $since only the completions after this Unix time
-     * @return array the completions, oldest first, each with the platform's user id and the completion time
+     * @return array the completions, publication by publication in the order asked, oldest first within each
      */
-    public static function execute(string $uuid, int $since = 0): array {
-        global $DB;
-        ['uuid' => $uuid, 'since' => $since] = self::validate_parameters(
+    public static function execute(array $uuids, int $since = 0): array {
+        ['uuids' => $uuids, 'since' => $since] = self::validate_parameters(
             self::execute_parameters(),
-            ['uuid' => $uuid, 'since' => $since]
+            ['uuids' => $uuids, 'since' => $since]
         );
         $system = context_system::instance();
         self::validate_context($system);
         require_capability('local/ltipublications:viewcompletions', $system);
 
+        $completions = [];
+        foreach (array_unique($uuids) as $uuid) {
+            array_push($completions, ...self::of_publication($uuid, $since));
+        }
+        return $completions;
+    }
+
+    /**
+     * Lists the completions of one publication's learners.
+     *
+     * @param string $uuid the publication uuid
+     * @param int $since only the completions after this Unix time
+     * @return array the completions, oldest first
+     */
+    private static function of_publication(string $uuid, int $since): array {
+        global $DB;
         $tool = $DB->get_record('enrol_lti_tools', ['uuid' => $uuid, 'ltiversion' => 'LTI-1p3'], 'id, contextid');
         $published = $tool ? context::instance_by_id($tool->contextid, IGNORE_MISSING) : false;
         if (!$published) {
@@ -96,6 +111,7 @@ class completions extends external_api {
         }
 
         return array_values(array_map(static fn($record) => [
+            'uuid' => $uuid,
             'sub' => $record->sub,
             'timecompleted' => (int) $record->timecompleted,
         ], $DB->get_records_sql($sql, $params)));
@@ -108,6 +124,7 @@ class completions extends external_api {
      */
     public static function execute_returns(): external_multiple_structure {
         return new external_multiple_structure(new external_single_structure([
+            'uuid' => new external_value(PARAM_ALPHANUMEXT, 'The publication uuid'),
             'sub' => new external_value(PARAM_RAW, 'The user id the platform sends as sub in its launches'),
             'timecompleted' => new external_value(PARAM_INT, 'When the learner completed the course or activity'),
         ]));

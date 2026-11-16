@@ -33,7 +33,7 @@ $functions = [
     ],
     'local_ltipublications_completions' => [
         'classname' => 'local_ltipublications\external\completions',
-        'description' => 'List when the learners who came through an LTI 1.3 publication completed it.',
+        'description' => 'List when the learners who came through LTI 1.3 publications completed them.',
         'type' => 'read',
         'capabilities' => 'local/ltipublications:viewcompletions',
     ],
